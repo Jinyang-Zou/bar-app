@@ -27,9 +27,8 @@ class ReferenceSerializer(serializers.ModelSerializer):
         """
         Check if the ref exists in the database.
         """
-        if not self.instance:
-            if Reference.objects.filter(ref=value).exists():
-                raise serializers.ValidationError("This reference already exists.")
+        if Reference.objects.filter(ref=value).exists():
+            raise serializers.ValidationError("This reference already exists.")
         return value
 
     def validate_name(self, value):

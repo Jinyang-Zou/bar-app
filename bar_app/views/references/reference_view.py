@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from bar_app.serializers import ReferenceSerializer
 from bar_app.models import Reference, Bar, Stock
+import bar_app.utils.exceptions.api_exceptions as api_excs
 
 class ListReferences(generics.ListAPIView):
     """
@@ -28,6 +29,12 @@ class ListReferences(generics.ListAPIView):
         references = Reference.objects.all()
         bar_id = self.request.query_params.get("bar_id")
         in_stock = self.request.query_params.get("in_stock")
+        expected_params = ["bar_id", "in_stock"]
+        params = self.request.query_params.keys()
+        for param in params:
+            if param not in expected_params:
+                raise api_excs.UnknownParamException(
+                    message=f"Unknown parameter: {param}.")
 
         if bar_id or in_stock:
             if bar_id:
