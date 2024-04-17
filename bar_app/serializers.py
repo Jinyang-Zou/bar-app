@@ -105,12 +105,11 @@ class StatisticsSerializer(serializers.Serializer):
 
         for bar in bars:
             stocks = Stock.objects.filter(bar=bar).all()
-            for stock in stocks:
-                if stock.stock > 0:
-                    bars_with_all_stocks.append(bar.id)
+            if all(stock.stock > 0 for stock in stocks):
+                bars_with_all_stocks.append(bar.id)
         return {
             "description": "Liste des comptoirs qui ont toutes les références en stock",
-            "bars": bars_with_all_stocks
+            "bars": list(set(bars_with_all_stocks))
         }
 
     def get_miss_at_least_one(self):
@@ -125,11 +124,11 @@ class StatisticsSerializer(serializers.Serializer):
 
         for bar in bars:
             stocks = Stock.objects.filter(bar=bar).all()
-            if all(stock.stock == 0 for stock in stocks):
+            if any(stock.stock == 0 for stock in stocks):
                 bars_with_missing_stocks.append(bar.id)
         return {
             "description": "Liste des comptoirs qui ont au moins une référence épuisée",
-            "bars": bars_with_missing_stocks
+            "bars": list(set(bars_with_missing_stocks))
         }
 
 class OrderItemSerializer(serializers.ModelSerializer):
