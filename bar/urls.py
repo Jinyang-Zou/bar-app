@@ -16,14 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from bar_app.views import bar_view
 
+router = DefaultRouter()
+
+router.register(r"bars", bar_view.BarViewSet, basename="bars")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("bar_app.urls.auth")),
     path("api/references/", include("bar_app.urls.references")),
-    path("api/bars/", include("bar_app.urls.bars")),
     path("api/stocks/", include("bar_app.urls.stocks")),
-    path("api/stat/", include("bar_app.urls.statistiques")),
+    path("api/stat/", include("bar_app.urls.statistics")),
     path("api/orders/", include("bar_app.urls.orders")),
+    path("api/", include(router.urls)),
 ]

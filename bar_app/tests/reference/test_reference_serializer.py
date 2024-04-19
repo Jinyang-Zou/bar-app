@@ -1,24 +1,19 @@
 from django.test import TestCase
 from bar_app.models import Reference, Bar, Stock
 from bar_app.serializers import ReferenceSerializer
+from bar_app.tests.db_fixture import DbFixture
 
-class ReferenceSerializerTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.reference = Reference.objects.create(
-            ref="REF001", name="name", description="description"
-        )
-
+class ReferenceSerializerTests(DbFixture, TestCase):
     def test_serializer_fields(self):
-        serializer = ReferenceSerializer(instance=self.reference)
+        serializer = ReferenceSerializer(instance=self.reference1)
         data = serializer.data
         self.assertEqual(data["ref"], "REF001")
-        self.assertEqual(data["name"], "name")
-        self.assertEqual(data["description"], "description")
+        self.assertEqual(data["name"], "name 1")
+        self.assertEqual(data["description"], "description 1")
 
     def test_read_only_id(self):
         serializer = ReferenceSerializer(
-            data={"id": 1, "ref": "REF002", "name": "name"}
+            data={"id": 1, "ref": "id read only", "name": "name"}
         )
         self.assertTrue(serializer.is_valid())
         ref = serializer.save()
@@ -35,11 +30,11 @@ class ReferenceSerializerTests(TestCase):
         self.assertIn("name", serializer.errors)
 
     def test_get_availability(self):
-        bar = Bar.objects.create(name="name")
-        Stock.objects.create(reference=self.reference, bar=bar, stock=5)
-        serializer = ReferenceSerializer(instance=self.reference)
+        bar = Bar.objects.create(name="test availability")
+        Stock.objects.create(reference=self.reference5, bar=bar, stock=5)
+        serializer = ReferenceSerializer(instance=self.reference5)
         self.assertEqual(serializer.data["availability"], "available")
 
-        Stock.objects.filter(reference=self.reference).update(stock=0)
-        serializer = ReferenceSerializer(instance=self.reference)
+        Stock.objects.filter(reference=self.reference6)
+        serializer = ReferenceSerializer(instance=self.reference6)
         self.assertEqual(serializer.data["availability"], "outofstock")

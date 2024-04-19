@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from django.db.models import Sum
 from django.contrib.auth.models import User
 from .models import *
 
@@ -41,15 +42,11 @@ class ReferenceSerializer(serializers.ModelSerializer):
         return value
 
     def get_availability(self, instance):
-        stocks = Stock.objects.filter(reference=instance)
+        stocks = Stock.objects.filter(reference=instance).values("reference").annotate(sum=Sum("stock"))
 
-        if not stocks.exists():
+        if not stocks.exists() or stocks[0]["sum"] <= 0:
             return "outofstock"
-
-        for stock in stocks:
-            if stock.stock > 0:
-                return "available"
-        return "outofstock"
+        return "available"
 
 class BarSerializer(serializers.ModelSerializer):
     """
@@ -102,11 +99,10 @@ class StatisticsSerializer(serializers.Serializer):
         """
         bars_with_all_stocks = []
         bars = Bar.objects.all()
+        bars_with_all_stocks = Bar.objects.filter(
+            stock__stock__gt=0
+        ).exclude(stock__stock=0).values_list("id", flat=True)
 
-        for bar in bars:
-            stocks = Stock.objects.filter(bar=bar).all()
-            if all(stock.stock > 0 for stock in stocks):
-                bars_with_all_stocks.append(bar.id)
         return {
             "description": "Liste des comptoirs qui ont toutes les références en stock",
             "bars": list(set(bars_with_all_stocks))
@@ -121,11 +117,10 @@ class StatisticsSerializer(serializers.Serializer):
         """
         bars_with_missing_stocks = []
         bars = Bar.objects.all()
+        bars_with_missing_stocks = Bar.objects.filter(
+            stock__stock=0
+        ).values_list("id", flat=True)
 
-        for bar in bars:
-            stocks = Stock.objects.filter(bar=bar).all()
-            if any(stock.stock == 0 for stock in stocks):
-                bars_with_missing_stocks.append(bar.id)
         return {
             "description": "Liste des comptoirs qui ont au moins une référence épuisée",
             "bars": list(set(bars_with_missing_stocks))
